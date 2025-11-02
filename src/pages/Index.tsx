@@ -3,7 +3,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, GripVertical, Plus, Trash2 } from "lucide-react";
+import { Check, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -28,8 +28,23 @@ const motivationalQuotes = [
   "Peace comes from within. Focus on what matters.",
 ];
 
-function SortableTask({ task, onToggle, onDelete }: { task: Task; onToggle: (id: string) => void; onDelete: (id: string) => void }) {
+function SortableTask({ 
+  task, 
+  onToggle, 
+  onDelete, 
+  onEdit,
+  isEditing,
+  onStartEdit 
+}: { 
+  task: Task; 
+  onToggle: (id: string) => void; 
+  onDelete: (id: string) => void;
+  onEdit: (id: string, text: string) => void;
+  isEditing: boolean;
+  onStartEdit: (id: string, text: string) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+  const [editValue, setEditValue] = useState(task.text);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -40,6 +55,14 @@ function SortableTask({ task, onToggle, onDelete }: { task: Task; onToggle: (id:
     low: "bg-priority-low",
     medium: "bg-priority-medium",
     high: "bg-priority-high",
+  };
+
+  const handleSaveEdit = () => {
+    if (editValue.trim()) {
+      onEdit(task.id, editValue.trim());
+    } else {
+      setEditValue(task.text);
+    }
   };
 
   return (
@@ -75,19 +98,50 @@ function SortableTask({ task, onToggle, onDelete }: { task: Task; onToggle: (id:
         {task.completed && <Check className="h-4 w-4 text-primary-foreground" />}
       </button>
 
-      <div className={cn("flex-1 transition-all duration-300", task.completed && "line-through text-muted-foreground")}>
-        {task.text}
-      </div>
+      {isEditing ? (
+        <Input
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSaveEdit();
+            if (e.key === "Escape") {
+              setEditValue(task.text);
+              onEdit(task.id, task.text);
+            }
+          }}
+          onBlur={handleSaveEdit}
+          className="flex-1 h-8 border-input bg-background"
+          autoFocus
+        />
+      ) : (
+        <div 
+          className={cn("flex-1 transition-all duration-300", task.completed && "line-through text-muted-foreground")}
+          onDoubleClick={() => onStartEdit(task.id, task.text)}
+        >
+          {task.text}
+        </div>
+      )}
 
       <div className={cn("h-2 w-2 rounded-full", priorityColors[task.priority])} aria-label={`Priority: ${task.priority}`} />
 
-      <button
-        onClick={() => onDelete(task.id)}
-        className="opacity-0 group-hover:opacity-100 text-destructive-foreground hover:text-destructive transition-all duration-200"
-        aria-label="Delete task"
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
+      {!isEditing && (
+        <>
+          <button
+            onClick={() => onStartEdit(task.id, task.text)}
+            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-all duration-200"
+            aria-label="Edit task"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => onDelete(task.id)}
+            className="opacity-0 group-hover:opacity-100 text-destructive-foreground hover:text-destructive transition-all duration-200"
+            aria-label="Delete task"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -97,6 +151,7 @@ const Index = () => {
   const [newTask, setNewTask] = useState("");
   const [newPriority, setNewPriority] = useState<Priority>("medium");
   const [quote, setQuote] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -157,6 +212,15 @@ const Index = () => {
 
   const handleDeleteTask = (id: string) => {
     setTasks(tasks.filter((task) => task.id !== id));
+  };
+
+  const handleEditTask = (id: string, text: string) => {
+    setTasks(tasks.map((task) => (task.id === id ? { ...task, text } : task)));
+    setEditingId(null);
+  };
+
+  const handleStartEdit = (id: string, text: string) => {
+    setEditingId(id);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -246,7 +310,15 @@ const Index = () => {
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
                 {tasks.map((task) => (
-                  <SortableTask key={task.id} task={task} onToggle={handleToggleTask} onDelete={handleDeleteTask} />
+                  <SortableTask 
+                    key={task.id} 
+                    task={task} 
+                    onToggle={handleToggleTask} 
+                    onDelete={handleDeleteTask}
+                    onEdit={handleEditTask}
+                    isEditing={editingId === task.id}
+                    onStartEdit={handleStartEdit}
+                  />
                 ))}
               </SortableContext>
             </DndContext>
