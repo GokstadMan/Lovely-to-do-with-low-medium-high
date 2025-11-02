@@ -42,7 +42,7 @@ All colors MUST be HSL.
     /* Priority colors - subtle and harmonious */
     --priority-low: 210 60% 88%;
     --priority-medium: 45 85% 88%;
-    --priority-high: 0 70% 88%;
+    --priority-high: 0 85% 70%;
 
     /* Custom gradients */
     --gradient-zen: linear-gradient(135deg, hsl(100 25% 88%) 0%, hsl(45 60% 95%) 100%);
@@ -88,7 +88,7 @@ All colors MUST be HSL.
 
     --priority-low: 210 50% 35%;
     --priority-medium: 45 70% 40%;
-    --priority-high: 0 60% 40%;
+    --priority-high: 0 80% 55%;
 
     --gradient-zen: linear-gradient(135deg, hsl(100 20% 15%) 0%, hsl(100 15% 20%) 100%);
 
