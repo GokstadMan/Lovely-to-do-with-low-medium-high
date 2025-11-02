@@ -235,6 +235,9 @@ const Index = () => {
     }
   };
 
+  const priorityOrder = { high: 0, medium: 1, low: 2 };
+  const sortedTasks = [...tasks].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
   const completedCount = tasks.filter((t) => t.completed).length;
   const totalCount = tasks.length;
 
@@ -308,8 +311,8 @@ const Index = () => {
             </div>
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-                {tasks.map((task) => (
+              <SortableContext items={sortedTasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+                {sortedTasks.map((task) => (
                   <SortableTask 
                     key={task.id} 
                     task={task} 
