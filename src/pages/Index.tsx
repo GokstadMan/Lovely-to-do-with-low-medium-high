@@ -3,9 +3,10 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, GripVertical, Pencil, Plus, Trash2, Menu, ListTodo, Flag, CheckCircle2, Sparkles, Trash } from "lucide-react";
+import { Check, GripVertical, Pencil, Plus, Trash2, Menu, ListTodo, Flag, CheckCircle2, Sparkles, Trash, Volume2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { playZenChime } from "@/lib/zen-sound";
@@ -245,6 +246,16 @@ const Index = () => {
   const [quote, setQuote] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
+  const [soundDuration, setSoundDuration] = useState<number>(() => {
+    if (typeof window === "undefined") return 2;
+    const saved = localStorage.getItem("zen-sound-duration");
+    const n = saved ? parseFloat(saved) : NaN;
+    return Number.isFinite(n) && n >= 1 && n <= 5 ? n : 2;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("zen-sound-duration", String(soundDuration));
+  }, [soundDuration]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -296,7 +307,7 @@ const Index = () => {
       };
       setTasks([...tasks, task]);
       setNewTask("");
-      playZenChime(2);
+      playZenChime(soundDuration);
     }
   };
 
@@ -421,6 +432,35 @@ const Index = () => {
                   </SheetClose>
                 </li>
               </ul>
+
+              <p className="mt-6 px-3 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Zen sound
+              </p>
+              <div className="px-3 py-3 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <Volume2 className="h-5 w-5 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 text-base text-foreground/80">Chime duration</span>
+                  <span className="text-sm text-muted-foreground tabular-nums">{soundDuration}s</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Slider
+                    value={[soundDuration]}
+                    min={1}
+                    max={5}
+                    step={0.5}
+                    onValueChange={([v]) => setSoundDuration(v)}
+                    className="flex-1"
+                    aria-label="Zen sound duration in seconds"
+                  />
+                  <button
+                    onClick={() => playZenChime(soundDuration)}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                    aria-label="Preview zen sound"
+                  >
+                    <Play className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             </nav>
 
             <div className="border-t border-border px-6 py-4">
@@ -517,6 +557,29 @@ const Index = () => {
                 {priority}
               </button>
             ))}
+          </div>
+
+          {/* Zen sound duration */}
+          <div className="mt-4 pt-4 border-t border-border flex items-center gap-3">
+            <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground shrink-0">Chime</span>
+            <Slider
+              value={[soundDuration]}
+              min={1}
+              max={5}
+              step={0.5}
+              onValueChange={([v]) => setSoundDuration(v)}
+              className="flex-1"
+              aria-label="Zen sound duration in seconds"
+            />
+            <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">{soundDuration}s</span>
+            <button
+              onClick={() => playZenChime(soundDuration)}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              aria-label="Preview zen sound"
+            >
+              <Play className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
