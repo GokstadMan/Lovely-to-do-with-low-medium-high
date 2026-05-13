@@ -432,6 +432,35 @@ const Index = () => {
                   </SheetClose>
                 </li>
               </ul>
+
+              <p className="mt-6 px-3 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Zen sound
+              </p>
+              <div className="px-3 py-3 rounded-lg">
+                <div className="flex items-center gap-3 mb-3">
+                  <Volume2 className="h-5 w-5 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 text-base text-foreground/80">Chime duration</span>
+                  <span className="text-sm text-muted-foreground tabular-nums">{soundDuration}s</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Slider
+                    value={[soundDuration]}
+                    min={1}
+                    max={5}
+                    step={0.5}
+                    onValueChange={([v]) => setSoundDuration(v)}
+                    className="flex-1"
+                    aria-label="Zen sound duration in seconds"
+                  />
+                  <button
+                    onClick={() => playZenChime(soundDuration)}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                    aria-label="Preview zen sound"
+                  >
+                    <Play className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             </nav>
 
             <div className="border-t border-border px-6 py-4">
