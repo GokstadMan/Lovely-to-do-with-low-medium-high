@@ -254,9 +254,27 @@ const Index = () => {
     return Number.isFinite(n) && n >= 1 && n <= 5 ? n : 2;
   });
 
+  const [soundType, setSoundType] = useState<ChimeType>(() => {
+    if (typeof window === "undefined") return "singing-bowl";
+    const saved = localStorage.getItem("zen-sound-type") as ChimeType | null;
+    return CHIME_OPTIONS.some((o) => o.value === saved) ? (saved as ChimeType) : "singing-bowl";
+  });
+  const [soundIntensity, setSoundIntensity] = useState<number>(() => {
+    if (typeof window === "undefined") return 1;
+    const saved = localStorage.getItem("zen-sound-intensity");
+    const n = saved ? parseFloat(saved) : NaN;
+    return Number.isFinite(n) && n >= 0 && n <= 1 ? n : 1;
+  });
+
   useEffect(() => {
     localStorage.setItem("zen-sound-duration", String(soundDuration));
   }, [soundDuration]);
+  useEffect(() => {
+    localStorage.setItem("zen-sound-type", soundType);
+  }, [soundType]);
+  useEffect(() => {
+    localStorage.setItem("zen-sound-intensity", String(soundIntensity));
+  }, [soundIntensity]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
