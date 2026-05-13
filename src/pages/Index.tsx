@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { playZenChime } from "@/lib/zen-sound";
+import { playZenChime, CHIME_OPTIONS, type ChimeType } from "@/lib/zen-sound";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Priority = "low" | "medium" | "high";
 
@@ -253,9 +254,27 @@ const Index = () => {
     return Number.isFinite(n) && n >= 1 && n <= 5 ? n : 2;
   });
 
+  const [soundType, setSoundType] = useState<ChimeType>(() => {
+    if (typeof window === "undefined") return "singing-bowl";
+    const saved = localStorage.getItem("zen-sound-type") as ChimeType | null;
+    return CHIME_OPTIONS.some((o) => o.value === saved) ? (saved as ChimeType) : "singing-bowl";
+  });
+  const [soundIntensity, setSoundIntensity] = useState<number>(() => {
+    if (typeof window === "undefined") return 1;
+    const saved = localStorage.getItem("zen-sound-intensity");
+    const n = saved ? parseFloat(saved) : NaN;
+    return Number.isFinite(n) && n >= 0 && n <= 1 ? n : 1;
+  });
+
   useEffect(() => {
     localStorage.setItem("zen-sound-duration", String(soundDuration));
   }, [soundDuration]);
+  useEffect(() => {
+    localStorage.setItem("zen-sound-type", soundType);
+  }, [soundType]);
+  useEffect(() => {
+    localStorage.setItem("zen-sound-intensity", String(soundIntensity));
+  }, [soundIntensity]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -307,7 +326,7 @@ const Index = () => {
       };
       setTasks([...tasks, task]);
       setNewTask("");
-      playZenChime(soundDuration);
+      playZenChime(soundDuration, soundType, soundIntensity);
     }
   };
 
@@ -436,29 +455,64 @@ const Index = () => {
               <p className="mt-6 px-3 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Zen sound
               </p>
-              <div className="px-3 py-3 rounded-lg">
-                <div className="flex items-center gap-3 mb-3">
-                  <Volume2 className="h-5 w-5 shrink-0 text-muted-foreground" />
-                  <span className="flex-1 text-base text-foreground/80">Chime duration</span>
-                  <span className="text-sm text-muted-foreground tabular-nums">{soundDuration}s</span>
+              <div className="px-3 py-3 space-y-4">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Volume2 className="h-5 w-5 shrink-0 text-muted-foreground" />
+                    <span className="flex-1 text-base text-foreground/80">Sound</span>
+                    <button
+                      onClick={() => playZenChime(soundDuration, soundType, soundIntensity)}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                      aria-label="Preview zen sound"
+                    >
+                      <Play className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <Select value={soundType} onValueChange={(v) => setSoundType(v as ChimeType)}>
+                    <SelectTrigger className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CHIME_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{o.label}</span>
+                            <span className="text-xs text-muted-foreground">{o.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="flex items-center gap-3">
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm text-foreground/80">Duration</span>
+                    <span className="text-sm text-muted-foreground tabular-nums">{soundDuration}s</span>
+                  </div>
                   <Slider
                     value={[soundDuration]}
                     min={1}
                     max={5}
                     step={0.5}
                     onValueChange={([v]) => setSoundDuration(v)}
-                    className="flex-1"
                     aria-label="Zen sound duration in seconds"
                   />
-                  <button
-                    onClick={() => playZenChime(soundDuration)}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                    aria-label="Preview zen sound"
-                  >
-                    <Play className="h-4 w-4" />
-                  </button>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm text-foreground/80">Intensity</span>
+                    <span className="text-sm text-muted-foreground tabular-nums">{Math.round(soundIntensity * 100)}%</span>
+                  </div>
+                  <Slider
+                    value={[soundIntensity]}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    onValueChange={([v]) => setSoundIntensity(v)}
+                    aria-label="Zen sound intensity"
+                  />
                 </div>
               </div>
             </nav>
@@ -559,27 +613,58 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Zen sound duration */}
-          <div className="mt-4 pt-4 border-t border-border flex items-center gap-3">
-            <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground shrink-0">Chime</span>
-            <Slider
-              value={[soundDuration]}
-              min={1}
-              max={5}
-              step={0.5}
-              onValueChange={([v]) => setSoundDuration(v)}
-              className="flex-1"
-              aria-label="Zen sound duration in seconds"
-            />
-            <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">{soundDuration}s</span>
-            <button
-              onClick={() => playZenChime(soundDuration)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              aria-label="Preview zen sound"
-            >
-              <Play className="h-4 w-4" />
-            </button>
+          {/* Zen sound settings */}
+          <div className="mt-4 pt-4 border-t border-border space-y-3">
+            <div className="flex items-center gap-3">
+              <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground shrink-0">Sound</span>
+              <Select value={soundType} onValueChange={(v) => setSoundType(v as ChimeType)}>
+                <SelectTrigger className="flex-1 h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CHIME_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      <span className="font-medium">{o.label}</span>
+                      <span className="text-xs text-muted-foreground ml-2">{o.description}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <button
+                onClick={() => playZenChime(soundDuration, soundType, soundIntensity)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                aria-label="Preview zen sound"
+              >
+                <Play className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground shrink-0 w-16">Duration</span>
+              <Slider
+                value={[soundDuration]}
+                min={1}
+                max={5}
+                step={0.5}
+                onValueChange={([v]) => setSoundDuration(v)}
+                className="flex-1"
+                aria-label="Zen sound duration in seconds"
+              />
+              <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">{soundDuration}s</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground shrink-0 w-16">Intensity</span>
+              <Slider
+                value={[soundIntensity]}
+                min={0}
+                max={1}
+                step={0.05}
+                onValueChange={([v]) => setSoundIntensity(v)}
+                className="flex-1"
+                aria-label="Zen sound intensity"
+              />
+              <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">{Math.round(soundIntensity * 100)}%</span>
+            </div>
           </div>
         </div>
 
