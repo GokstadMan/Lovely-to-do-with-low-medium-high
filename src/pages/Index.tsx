@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
@@ -46,6 +46,11 @@ function SortableTask({
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
   const [editValue, setEditValue] = useState(task.text);
+  const [swipeX, setSwipeX] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const touchStart = useRef<{ x: number; y: number; locked: boolean } | null>(null);
+
+  const SWIPE_THRESHOLD = 80;
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -66,83 +71,166 @@ function SortableTask({
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isEditing) return;
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY, locked: false };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStart.current || isEditing) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchStart.current.x;
+    const dy = t.clientY - touchStart.current.y;
+
+    if (!touchStart.current.locked) {
+      // Lock to horizontal swipe only if movement is clearly horizontal
+      if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+        touchStart.current.locked = true;
+        setIsSwiping(true);
+      } else if (Math.abs(dy) > 8) {
+        // Vertical scroll — abandon swipe
+        touchStart.current = null;
+        return;
+      } else {
+        return;
+      }
+    }
+    // Dampen past threshold for nicer feel
+    const damped = Math.abs(dx) > SWIPE_THRESHOLD
+      ? Math.sign(dx) * (SWIPE_THRESHOLD + (Math.abs(dx) - SWIPE_THRESHOLD) * 0.4)
+      : dx;
+    setSwipeX(damped);
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStart.current?.locked && Math.abs(swipeX) >= SWIPE_THRESHOLD) {
+      onToggle(task.id);
+    }
+    touchStart.current = null;
+    setSwipeX(0);
+    setIsSwiping(false);
+  };
+
+  const swipeProgress = Math.min(Math.abs(swipeX) / SWIPE_THRESHOLD, 1);
+  const willToggle = Math.abs(swipeX) >= SWIPE_THRESHOLD;
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group relative flex items-center gap-2 sm:gap-3 rounded-xl bg-card p-3 sm:p-4 shadow-sm border border-border transition-all duration-200",
-        isDragging && "opacity-50 shadow-lg scale-105",
-        !isDragging && "hover:shadow-md hover:border-primary/20",
-        task.completed && "opacity-60"
+        "relative rounded-xl",
+        isDragging && "opacity-50 scale-105"
       )}
     >
-      <button
-        {...attributes}
-        {...listeners}
-        className="cursor-grab touch-none text-muted-foreground hover:text-foreground transition-colors flex h-9 w-6 items-center justify-center -ml-1"
-        aria-label="Drag to reorder"
-      >
-        <GripVertical className="h-5 w-5 sm:h-4 sm:w-4" />
-      </button>
-
-      <button
-        onClick={() => onToggle(task.id)}
-        className={cn(
-          "flex h-7 w-7 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300",
-          task.completed
-            ? "bg-primary border-primary animate-check-bounce"
-            : "border-muted-foreground/40 hover:border-primary hover:bg-primary/5"
-        )}
-        aria-label={task.completed ? "Mark as incomplete" : "Mark as complete"}
-      >
-        {task.completed && <Check className="h-4 w-4 text-primary-foreground" />}
-      </button>
-
-      {isEditing ? (
-        <Input
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleSaveEdit();
-            if (e.key === "Escape") {
-              setEditValue(task.text);
-              onEdit(task.id, task.text);
-            }
-          }}
-          onBlur={handleSaveEdit}
-          className="flex-1 min-w-0 h-9 text-base sm:text-sm border-input bg-background"
-          autoFocus
-        />
-      ) : (
+      {/* Swipe reveal background */}
+      {isSwiping && (
         <div
-          className={cn("flex-1 min-w-0 break-words text-sm sm:text-base transition-all duration-300", task.completed && "line-through text-muted-foreground")}
-          onDoubleClick={() => onStartEdit(task.id, task.text)}
+          className={cn(
+            "absolute inset-0 rounded-xl flex items-center justify-between px-6 transition-colors duration-150 pointer-events-none",
+            willToggle ? "bg-primary/90" : "bg-primary/30"
+          )}
+          style={{ opacity: swipeProgress }}
+          aria-hidden
         >
-          {task.text}
+          <Check
+            className={cn(
+              "h-6 w-6 transition-opacity",
+              swipeX > 0 ? (willToggle ? "text-primary-foreground" : "text-primary") : "opacity-0"
+            )}
+          />
+          <Check
+            className={cn(
+              "h-6 w-6 transition-opacity",
+              swipeX < 0 ? (willToggle ? "text-primary-foreground" : "text-primary") : "opacity-0"
+            )}
+          />
         </div>
       )}
 
-      <div className={cn("h-2.5 w-2.5 shrink-0 rounded-full", priorityColors[task.priority])} aria-label={`Priority: ${task.priority}`} />
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        style={{
+          transform: `translateX(${swipeX}px)`,
+          transition: isSwiping ? "none" : "transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+        }}
+        className={cn(
+          "group relative flex items-center gap-2 sm:gap-3 rounded-xl bg-card p-3 sm:p-4 shadow-sm border border-border",
+          !isDragging && "hover:shadow-md hover:border-primary/20",
+          task.completed && "opacity-60"
+        )}
+      >
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab touch-none text-muted-foreground hover:text-foreground transition-colors flex h-9 w-6 items-center justify-center -ml-1"
+          aria-label="Drag to reorder"
+        >
+          <GripVertical className="h-5 w-5 sm:h-4 sm:w-4" />
+        </button>
 
-      {!isEditing && (
-        <>
-          <button
-            onClick={() => onStartEdit(task.id, task.text)}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100"
-            aria-label="Edit task"
+        <button
+          onClick={() => onToggle(task.id)}
+          className={cn(
+            "flex h-7 w-7 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300",
+            task.completed
+              ? "bg-primary border-primary animate-check-bounce"
+              : "border-muted-foreground/40 hover:border-primary hover:bg-primary/5"
+          )}
+          aria-label={task.completed ? "Mark as incomplete" : "Mark as complete"}
+        >
+          {task.completed && <Check className="h-4 w-4 text-primary-foreground" />}
+        </button>
+
+        {isEditing ? (
+          <Input
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSaveEdit();
+              if (e.key === "Escape") {
+                setEditValue(task.text);
+                onEdit(task.id, task.text);
+              }
+            }}
+            onBlur={handleSaveEdit}
+            className="flex-1 min-w-0 h-9 text-base sm:text-sm border-input bg-background"
+            autoFocus
+          />
+        ) : (
+          <div
+            className={cn("flex-1 min-w-0 break-words text-sm sm:text-base transition-all duration-300", task.completed && "line-through text-muted-foreground")}
+            onDoubleClick={() => onStartEdit(task.id, task.text)}
           >
-            <Pencil className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => onDelete(task.id)}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100"
-            aria-label="Delete task"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </>
-      )}
+            {task.text}
+          </div>
+        )}
+
+        <div className={cn("h-2.5 w-2.5 shrink-0 rounded-full", priorityColors[task.priority])} aria-label={`Priority: ${task.priority}`} />
+
+        {!isEditing && (
+          <>
+            <button
+              onClick={() => onStartEdit(task.id, task.text)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100"
+              aria-label="Edit task"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => onDelete(task.id)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100"
+              aria-label="Delete task"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }
