@@ -246,7 +246,7 @@ const Index = () => {
   const totalCount = tasks.length;
 
   return (
-    <div className="min-h-screen bg-gradient-zen px-4 py-6 sm:p-8">
+    <div className="min-h-screen bg-gradient-zen px-4 py-6 sm:p-8 pb-[calc(env(safe-area-inset-bottom)+11rem)] sm:pb-8">
       <div className="mx-auto max-w-2xl">
         {/* Header with Quote */}
         <header className="mb-6 sm:mb-8 text-center animate-fade-in">
@@ -272,8 +272,29 @@ const Index = () => {
           </div>
         )}
 
-        {/* Add Task Form */}
-        <div className="mb-6 rounded-2xl bg-card p-4 sm:p-6 shadow-lg border border-border animate-scale-in">
+        {/* Filter chips (always visible) */}
+        {totalCount > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="text-sm text-muted-foreground mr-1">Filter:</span>
+            {(["all", "high", "medium", "low"] as Filter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={cn(
+                  "min-h-9 px-4 py-1.5 rounded-full text-xs font-medium transition-all",
+                  filter === f
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-accent"
+                )}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Add Task Form (desktop/tablet) */}
+        <div className="hidden sm:block mb-6 rounded-2xl bg-card p-4 sm:p-6 shadow-lg border border-border animate-scale-in">
           <div className="flex gap-2 sm:gap-3 mb-3">
             <Input
               value={newTask}
@@ -308,19 +329,21 @@ const Index = () => {
 
         {/* Tasks List */}
         <div className="space-y-3">
-          {tasks.length === 0 ? (
+          {visibleTasks.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground animate-fade-in">
-              <p className="text-lg">No tasks yet. Add one to get started.</p>
-              <p className="text-sm mt-2">Find your focus, one task at a time.</p>
+              <p className="text-lg">
+                {totalCount === 0 ? "No tasks yet. Add one to get started." : "No tasks match this filter."}
+              </p>
+              {totalCount === 0 && <p className="text-sm mt-2">Find your focus, one task at a time.</p>}
             </div>
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={sortedTasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-                {sortedTasks.map((task) => (
-                  <SortableTask 
-                    key={task.id} 
-                    task={task} 
-                    onToggle={handleToggleTask} 
+              <SortableContext items={visibleTasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+                {visibleTasks.map((task) => (
+                  <SortableTask
+                    key={task.id}
+                    task={task}
+                    onToggle={handleToggleTask}
                     onDelete={handleDeleteTask}
                     onEdit={handleEditTask}
                     isEditing={editingId === task.id}
@@ -330,6 +353,49 @@ const Index = () => {
               </SortableContext>
             </DndContext>
           )}
+        </div>
+      </div>
+
+      {/* Sticky mobile action bar */}
+      <div
+        className="sm:hidden fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-md shadow-[0_-8px_24px_-12px_hsl(var(--foreground)/0.15)] px-4 pt-3 animate-fade-in"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
+      >
+        <div className="mx-auto max-w-2xl">
+          <div className="flex gap-2 mb-2">
+            <Input
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
+              placeholder="Add a new task..."
+              className="flex-1 h-11 text-base border-input bg-background"
+            />
+            <Button
+              onClick={handleAddTask}
+              size="icon"
+              className="h-11 w-11 shrink-0 bg-primary hover:bg-primary/90"
+              aria-label="Add task"
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto -mx-1 px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <span className="text-xs text-muted-foreground shrink-0">Priority:</span>
+            {(["low", "medium", "high"] as Priority[]).map((priority) => (
+              <button
+                key={priority}
+                onClick={() => setNewPriority(priority)}
+                className={cn(
+                  "min-h-9 shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                  newPriority === priority
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground"
+                )}
+              >
+                {priority}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
