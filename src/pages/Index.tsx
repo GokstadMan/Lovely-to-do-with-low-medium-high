@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { playZenChime } from "@/lib/zen-sound";
 
 type Priority = "low" | "medium" | "high";
 
@@ -295,6 +296,7 @@ const Index = () => {
       };
       setTasks([...tasks, task]);
       setNewTask("");
+      playZenChime(2);
     }
   };
 
