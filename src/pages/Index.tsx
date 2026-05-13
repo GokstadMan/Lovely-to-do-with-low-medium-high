@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { playZenChime } from "@/lib/zen-sound";
+import { playZenChime, CHIME_OPTIONS, type ChimeType } from "@/lib/zen-sound";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Priority = "low" | "medium" | "high";
 
