@@ -146,12 +146,15 @@ function SortableTask({
   );
 }
 
+type Filter = "all" | Priority;
+
 const Index = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState("");
   const [newPriority, setNewPriority] = useState<Priority>("medium");
   const [quote, setQuote] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<Filter>("all");
 
   const sensors = useSensors(
     useSensor(PointerSensor),
