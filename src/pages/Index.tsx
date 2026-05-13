@@ -578,27 +578,58 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Zen sound duration */}
-          <div className="mt-4 pt-4 border-t border-border flex items-center gap-3">
-            <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground shrink-0">Chime</span>
-            <Slider
-              value={[soundDuration]}
-              min={1}
-              max={5}
-              step={0.5}
-              onValueChange={([v]) => setSoundDuration(v)}
-              className="flex-1"
-              aria-label="Zen sound duration in seconds"
-            />
-            <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">{soundDuration}s</span>
-            <button
-              onClick={() => playZenChime(soundDuration, soundType, soundIntensity)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              aria-label="Preview zen sound"
-            >
-              <Play className="h-4 w-4" />
-            </button>
+          {/* Zen sound settings */}
+          <div className="mt-4 pt-4 border-t border-border space-y-3">
+            <div className="flex items-center gap-3">
+              <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground shrink-0">Sound</span>
+              <Select value={soundType} onValueChange={(v) => setSoundType(v as ChimeType)}>
+                <SelectTrigger className="flex-1 h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CHIME_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      <span className="font-medium">{o.label}</span>
+                      <span className="text-xs text-muted-foreground ml-2">{o.description}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <button
+                onClick={() => playZenChime(soundDuration, soundType, soundIntensity)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                aria-label="Preview zen sound"
+              >
+                <Play className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground shrink-0 w-16">Duration</span>
+              <Slider
+                value={[soundDuration]}
+                min={1}
+                max={5}
+                step={0.5}
+                onValueChange={([v]) => setSoundDuration(v)}
+                className="flex-1"
+                aria-label="Zen sound duration in seconds"
+              />
+              <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">{soundDuration}s</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground shrink-0 w-16">Intensity</span>
+              <Slider
+                value={[soundIntensity]}
+                min={0}
+                max={1}
+                step={0.05}
+                onValueChange={([v]) => setSoundIntensity(v)}
+                className="flex-1"
+                aria-label="Zen sound intensity"
+              />
+              <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">{Math.round(soundIntensity * 100)}%</span>
+            </div>
           </div>
         </div>
 
