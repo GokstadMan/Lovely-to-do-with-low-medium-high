@@ -326,7 +326,7 @@ const Index = () => {
       };
       setTasks([...tasks, task]);
       setNewTask("");
-      playZenChime(soundDuration);
+      playZenChime(soundDuration, soundType, soundIntensity);
     }
   };
 
@@ -472,7 +472,7 @@ const Index = () => {
                     aria-label="Zen sound duration in seconds"
                   />
                   <button
-                    onClick={() => playZenChime(soundDuration)}
+                    onClick={() => playZenChime(soundDuration, soundType, soundIntensity)}
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                     aria-label="Preview zen sound"
                   >
@@ -593,7 +593,7 @@ const Index = () => {
             />
             <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">{soundDuration}s</span>
             <button
-              onClick={() => playZenChime(soundDuration)}
+              onClick={() => playZenChime(soundDuration, soundType, soundIntensity)}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               aria-label="Preview zen sound"
             >
