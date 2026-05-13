@@ -3,9 +3,10 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, GripVertical, Pencil, Plus, Trash2, Menu, ListTodo, Flag, CheckCircle2, Sparkles, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 type Priority = "low" | "medium" | "high";
@@ -245,12 +246,114 @@ const Index = () => {
   const completedCount = tasks.filter((t) => t.completed).length;
   const totalCount = tasks.length;
 
+  const handleClearCompleted = () => setTasks(tasks.filter((t) => !t.completed));
+
+  const navFilters: { key: Filter; label: string; icon: typeof ListTodo }[] = [
+    { key: "all", label: "All Tasks", icon: ListTodo },
+    { key: "high", label: "High Priority", icon: Flag },
+    { key: "medium", label: "Medium Priority", icon: Flag },
+    { key: "low", label: "Low Priority", icon: Flag },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-zen px-4 py-6 sm:p-8 pb-[calc(env(safe-area-inset-bottom)+11rem)] sm:pb-8">
+      {/* Mobile top nav bar */}
+      <div className="sm:hidden sticky top-0 -mx-4 -mt-6 mb-4 z-30 flex items-center justify-between px-4 py-3 bg-background/70 backdrop-blur-md border-b border-border">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-11 w-11 -ml-2" aria-label="Open menu">
+              <Menu className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[85vw] max-w-sm p-0 flex flex-col">
+            <SheetHeader className="px-6 pt-6 pb-4 text-left border-b border-border">
+              <SheetTitle className="text-2xl font-light tracking-tight">Zen Tasks</SheetTitle>
+              <SheetDescription className="text-sm">
+                {completedCount} of {totalCount} complete
+              </SheetDescription>
+            </SheetHeader>
+
+            <nav className="flex-1 overflow-y-auto px-3 py-4">
+              <p className="px-3 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Filter
+              </p>
+              <ul className="flex flex-col gap-1">
+                {navFilters.map(({ key, label, icon: Icon }) => {
+                  const active = filter === key;
+                  const count = key === "all" ? totalCount : tasks.filter((t) => t.priority === key).length;
+                  return (
+                    <li key={key}>
+                      <SheetClose asChild>
+                        <button
+                          onClick={() => setFilter(key)}
+                          className={cn(
+                            "w-full min-h-12 flex items-center gap-3 px-3 py-3 rounded-lg text-base transition-colors",
+                            active
+                              ? "bg-primary/10 text-foreground font-medium"
+                              : "text-foreground/80 hover:bg-accent"
+                          )}
+                        >
+                          <Icon
+                            className={cn(
+                              "h-5 w-5 shrink-0",
+                              key === "high" && "text-priority-high",
+                              key === "medium" && "text-priority-medium",
+                              key === "low" && "text-priority-low",
+                              key === "all" && "text-muted-foreground"
+                            )}
+                          />
+                          <span className="flex-1 text-left">{label}</span>
+                          <span className="text-xs text-muted-foreground tabular-nums">{count}</span>
+                        </button>
+                      </SheetClose>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <p className="mt-6 px-3 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Actions
+              </p>
+              <ul className="flex flex-col gap-1">
+                <li>
+                  <SheetClose asChild>
+                    <button
+                      onClick={handleClearCompleted}
+                      disabled={completedCount === 0}
+                      className="w-full min-h-12 flex items-center gap-3 px-3 py-3 rounded-lg text-base text-foreground/80 hover:bg-accent disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                    >
+                      <Trash className="h-5 w-5 shrink-0 text-muted-foreground" />
+                      <span className="flex-1 text-left">Clear completed</span>
+                      {completedCount > 0 && (
+                        <span className="text-xs text-muted-foreground tabular-nums">{completedCount}</span>
+                      )}
+                    </button>
+                  </SheetClose>
+                </li>
+              </ul>
+            </nav>
+
+            <div className="border-t border-border px-6 py-4">
+              <div className="flex items-start gap-2 text-xs italic text-muted-foreground leading-relaxed">
+                <Sparkles className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
+                <span>{quote}</span>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        <span className="text-base font-light tracking-tight text-foreground">Zen Tasks</span>
+
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
+          <CheckCircle2 className="h-4 w-4" />
+          {completedCount}/{totalCount}
+        </div>
+      </div>
+
       <div className="mx-auto max-w-2xl">
         {/* Header with Quote */}
         <header className="mb-6 sm:mb-8 text-center animate-fade-in">
-          <h1 className="mb-2 sm:mb-3 text-3xl sm:text-4xl font-light tracking-tight text-foreground">Zen Tasks</h1>
+          <h1 className="hidden sm:block mb-2 sm:mb-3 text-3xl sm:text-4xl font-light tracking-tight text-foreground">Zen Tasks</h1>
           <p className="text-sm italic text-muted-foreground max-w-md mx-auto leading-relaxed px-2">{quote}</p>
         </header>
 
