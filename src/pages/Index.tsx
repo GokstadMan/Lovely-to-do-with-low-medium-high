@@ -240,6 +240,7 @@ const Index = () => {
 
   const priorityOrder = { high: 0, medium: 1, low: 2 };
   const sortedTasks = [...tasks].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+  const visibleTasks = filter === "all" ? sortedTasks : sortedTasks.filter((t) => t.priority === filter);
 
   const completedCount = tasks.filter((t) => t.completed).length;
   const totalCount = tasks.length;
