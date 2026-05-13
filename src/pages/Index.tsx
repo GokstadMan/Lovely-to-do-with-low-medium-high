@@ -296,6 +296,7 @@ const Index = () => {
       };
       setTasks([...tasks, task]);
       setNewTask("");
+      playZenChime(2);
     }
   };
 
