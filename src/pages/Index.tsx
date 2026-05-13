@@ -242,17 +242,17 @@ const Index = () => {
   const totalCount = tasks.length;
 
   return (
-    <div className="min-h-screen bg-gradient-zen p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-zen px-4 py-6 sm:p-8">
       <div className="mx-auto max-w-2xl">
         {/* Header with Quote */}
-        <header className="mb-8 text-center animate-fade-in">
-          <h1 className="mb-3 text-4xl font-light tracking-tight text-foreground">Zen Tasks</h1>
-          <p className="text-sm italic text-muted-foreground max-w-md mx-auto leading-relaxed">{quote}</p>
+        <header className="mb-6 sm:mb-8 text-center animate-fade-in">
+          <h1 className="mb-2 sm:mb-3 text-3xl sm:text-4xl font-light tracking-tight text-foreground">Zen Tasks</h1>
+          <p className="text-sm italic text-muted-foreground max-w-md mx-auto leading-relaxed px-2">{quote}</p>
         </header>
 
         {/* Progress indicator */}
         {totalCount > 0 && (
-          <div className="mb-6 animate-scale-in">
+          <div className="mb-5 sm:mb-6 animate-scale-in">
             <div className="flex items-center justify-between mb-2 text-sm text-muted-foreground">
               <span>Progress</span>
               <span>
@@ -269,28 +269,28 @@ const Index = () => {
         )}
 
         {/* Add Task Form */}
-        <div className="mb-6 rounded-2xl bg-card p-6 shadow-lg border border-border animate-scale-in">
-          <div className="flex gap-3 mb-3">
+        <div className="mb-6 rounded-2xl bg-card p-4 sm:p-6 shadow-lg border border-border animate-scale-in">
+          <div className="flex gap-2 sm:gap-3 mb-3">
             <Input
               value={newTask}
               onChange={(e) => setNewTask(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
               placeholder="Add a new task..."
-              className="flex-1 border-input bg-background"
+              className="flex-1 h-11 sm:h-10 text-base sm:text-sm border-input bg-background"
             />
-            <Button onClick={handleAddTask} size="icon" className="bg-primary hover:bg-primary/90">
-              <Plus className="h-4 w-4" />
+            <Button onClick={handleAddTask} size="icon" className="h-11 w-11 sm:h-10 sm:w-10 shrink-0 bg-primary hover:bg-primary/90">
+              <Plus className="h-5 w-5 sm:h-4 sm:w-4" />
             </Button>
           </div>
-          
-          <div className="flex gap-2">
-            <span className="text-sm text-muted-foreground mr-2">Priority:</span>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-muted-foreground mr-1">Priority:</span>
             {(["low", "medium", "high"] as Priority[]).map((priority) => (
               <button
                 key={priority}
                 onClick={() => setNewPriority(priority)}
                 className={cn(
-                  "px-3 py-1 rounded-full text-xs font-medium transition-all",
+                  "min-h-9 px-4 py-1.5 rounded-full text-xs font-medium transition-all",
                   newPriority === priority
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-secondary-foreground hover:bg-accent"
