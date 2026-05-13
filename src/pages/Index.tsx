@@ -245,6 +245,16 @@ const Index = () => {
   const [quote, setQuote] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
+  const [soundDuration, setSoundDuration] = useState<number>(() => {
+    if (typeof window === "undefined") return 2;
+    const saved = localStorage.getItem("zen-sound-duration");
+    const n = saved ? parseFloat(saved) : NaN;
+    return Number.isFinite(n) && n >= 1 && n <= 5 ? n : 2;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("zen-sound-duration", String(soundDuration));
+  }, [soundDuration]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
