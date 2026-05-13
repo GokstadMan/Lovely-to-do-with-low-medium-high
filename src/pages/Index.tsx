@@ -70,7 +70,7 @@ function SortableTask({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group relative flex items-center gap-3 rounded-xl bg-card p-4 shadow-sm border border-border transition-all duration-200",
+        "group relative flex items-center gap-2 sm:gap-3 rounded-xl bg-card p-3 sm:p-4 shadow-sm border border-border transition-all duration-200",
         isDragging && "opacity-50 shadow-lg scale-105",
         !isDragging && "hover:shadow-md hover:border-primary/20",
         task.completed && "opacity-60"
@@ -79,16 +79,16 @@ function SortableTask({
       <button
         {...attributes}
         {...listeners}
-        className="cursor-grab touch-none text-muted-foreground hover:text-foreground transition-colors"
+        className="cursor-grab touch-none text-muted-foreground hover:text-foreground transition-colors flex h-9 w-6 items-center justify-center -ml-1"
         aria-label="Drag to reorder"
       >
-        <GripVertical className="h-4 w-4" />
+        <GripVertical className="h-5 w-5 sm:h-4 sm:w-4" />
       </button>
 
       <button
         onClick={() => onToggle(task.id)}
         className={cn(
-          "flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-300",
+          "flex h-7 w-7 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300",
           task.completed
             ? "bg-primary border-primary animate-check-bounce"
             : "border-muted-foreground/40 hover:border-primary hover:bg-primary/5"
@@ -110,32 +110,32 @@ function SortableTask({
             }
           }}
           onBlur={handleSaveEdit}
-          className="flex-1 h-8 border-input bg-background"
+          className="flex-1 min-w-0 h-9 text-base sm:text-sm border-input bg-background"
           autoFocus
         />
       ) : (
-        <div 
-          className={cn("flex-1 transition-all duration-300", task.completed && "line-through text-muted-foreground")}
+        <div
+          className={cn("flex-1 min-w-0 break-words text-sm sm:text-base transition-all duration-300", task.completed && "line-through text-muted-foreground")}
           onDoubleClick={() => onStartEdit(task.id, task.text)}
         >
           {task.text}
         </div>
       )}
 
-      <div className={cn("h-2 w-2 rounded-full", priorityColors[task.priority])} aria-label={`Priority: ${task.priority}`} />
+      <div className={cn("h-2.5 w-2.5 shrink-0 rounded-full", priorityColors[task.priority])} aria-label={`Priority: ${task.priority}`} />
 
       {!isEditing && (
         <>
           <button
             onClick={() => onStartEdit(task.id, task.text)}
-            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-all duration-200"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100"
             aria-label="Edit task"
           >
             <Pencil className="h-4 w-4" />
           </button>
           <button
             onClick={() => onDelete(task.id)}
-            className="opacity-0 group-hover:opacity-100 text-destructive-foreground hover:text-destructive transition-all duration-200"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100"
             aria-label="Delete task"
           >
             <Trash2 className="h-4 w-4" />
