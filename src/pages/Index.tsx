@@ -3,7 +3,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, GripVertical, Pencil, Plus, Trash2, Menu, ListTodo, Flag, CheckCircle2, Sparkles, Trash, Volume2, Play } from "lucide-react";
+import { Check, GripVertical, Pencil, Plus, Trash2, Menu, ListTodo, Flag, CheckCircle2, Sparkles, Trash, Volume2, Play, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -261,6 +261,17 @@ const Index = () => {
   const [newPriority, setNewPriority] = useState<Priority>("medium");
   const [newCategory, setNewCategory] = useState<Category>("privat");
   const [activeCategory, setActiveCategory] = useState<"all" | Category>("all");
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const saved = localStorage.getItem("zen-theme");
+    if (saved) return saved === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+    localStorage.setItem("zen-theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
   const [quote, setQuote] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
@@ -502,6 +513,19 @@ const Index = () => {
               </p>
               <ul className="flex flex-col gap-1">
                 <li>
+                  <button
+                    onClick={() => setDarkMode(!darkMode)}
+                    className="w-full min-h-12 flex items-center gap-3 px-3 py-3 rounded-lg text-base text-foreground/80 hover:bg-accent transition-colors"
+                  >
+                    {darkMode ? (
+                      <Sun className="h-5 w-5 shrink-0 text-muted-foreground" />
+                    ) : (
+                      <Moon className="h-5 w-5 shrink-0 text-muted-foreground" />
+                    )}
+                    <span className="flex-1 text-left">{darkMode ? "Lyst tema" : "Mørkt tema"}</span>
+                  </button>
+                </li>
+                <li>
                   <SheetClose asChild>
                     <button
                       onClick={handleClearCompleted}
@@ -594,15 +618,35 @@ const Index = () => {
 
         <span className="text-base font-light tracking-tight text-foreground">Zen Tasks</span>
 
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
-          <CheckCircle2 className="h-4 w-4" />
-          {completedCount}/{totalCount}
+        <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
+            <CheckCircle2 className="h-4 w-4" />
+            {completedCount}/{totalCount}
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setDarkMode(!darkMode)}
+            className="h-11 w-11 -mr-2"
+            aria-label={darkMode ? "Bytt til lyst tema" : "Bytt til mørkt tema"}
+          >
+            {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
         </div>
       </div>
 
       <div className="mx-auto max-w-2xl">
         {/* Header with Quote */}
-        <header className="mb-6 sm:mb-8 text-center animate-fade-in">
+        <header className="relative mb-6 sm:mb-8 text-center animate-fade-in">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setDarkMode(!darkMode)}
+            className="hidden sm:flex absolute right-0 top-0 h-10 w-10"
+            aria-label={darkMode ? "Bytt til lyst tema" : "Bytt til mørkt tema"}
+          >
+            {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
           <h1 className="hidden sm:block mb-2 sm:mb-3 text-3xl sm:text-4xl font-light tracking-tight text-foreground">Zen Tasks</h1>
           <p className="text-sm italic text-muted-foreground max-w-md mx-auto leading-relaxed px-2">{quote}</p>
         </header>
