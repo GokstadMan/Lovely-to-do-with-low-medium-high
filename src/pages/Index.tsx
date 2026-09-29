@@ -13,12 +13,23 @@ import { playZenChime, CHIME_OPTIONS, type ChimeType } from "@/lib/zen-sound";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Priority = "low" | "medium" | "high";
+type Category = "jobb" | "privat" | "helse" | "prosjekter";
+
+const CATEGORIES: { key: Category; label: string; color: string }[] = [
+  { key: "jobb", label: "Jobb", color: "bg-priority-low" },
+  { key: "privat", label: "Privat", color: "bg-primary" },
+  { key: "helse", label: "Helse", color: "bg-priority-medium" },
+  { key: "prosjekter", label: "Prosjekter", color: "bg-priority-high" },
+];
+
+const categoryMeta = (key: Category) => CATEGORIES.find((c) => c.key === key) ?? CATEGORIES[1];
 
 interface Task {
   id: string;
   text: string;
   completed: boolean;
   priority: Priority;
+  category: Category;
 }
 
 const motivationalQuotes = [
@@ -213,6 +224,10 @@ function SortableTask({
           </div>
         )}
 
+        <span className="hidden xs:inline sm:inline-flex shrink-0 items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground">
+          {categoryMeta(task.category).label}
+        </span>
+
         <div className={cn("h-2.5 w-2.5 shrink-0 rounded-full", priorityColors[task.priority])} aria-label={`Priority: ${task.priority}`} />
 
         {!isEditing && (
@@ -244,6 +259,8 @@ const Index = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState("");
   const [newPriority, setNewPriority] = useState<Priority>("medium");
+  const [newCategory, setNewCategory] = useState<Category>("privat");
+  const [activeCategory, setActiveCategory] = useState<"all" | Category>("all");
   const [quote, setQuote] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
@@ -287,7 +304,8 @@ const Index = () => {
   useEffect(() => {
     const savedTasks = localStorage.getItem("zen-tasks");
     if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
+      const parsed = JSON.parse(savedTasks) as Task[];
+      setTasks(parsed.map((t) => ({ ...t, category: t.category ?? "privat" })));
     }
   }, []);
 
@@ -323,6 +341,7 @@ const Index = () => {
         text: newTask.trim(),
         completed: false,
         priority: newPriority,
+        category: newCategory,
       };
       setTasks([...tasks, task]);
       setNewTask("");
@@ -361,7 +380,8 @@ const Index = () => {
 
   const priorityOrder = { high: 0, medium: 1, low: 2 };
   const sortedTasks = [...tasks].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
-  const visibleTasks = filter === "all" ? sortedTasks : sortedTasks.filter((t) => t.priority === filter);
+  const categoryTasks = activeCategory === "all" ? sortedTasks : sortedTasks.filter((t) => t.category === activeCategory);
+  const visibleTasks = filter === "all" ? categoryTasks : categoryTasks.filter((t) => t.priority === filter);
 
   const completedCount = tasks.filter((t) => t.completed).length;
   const totalCount = tasks.length;
@@ -423,6 +443,52 @@ const Index = () => {
                             )}
                           />
                           <span className="flex-1 text-left">{label}</span>
+                          <span className="text-xs text-muted-foreground tabular-nums">{count}</span>
+                        </button>
+                      </SheetClose>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <p className="mt-6 px-3 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Kategorier
+              </p>
+              <ul className="flex flex-col gap-1">
+                <li>
+                  <SheetClose asChild>
+                    <button
+                      onClick={() => setActiveCategory("all")}
+                      className={cn(
+                        "w-full min-h-12 flex items-center gap-3 px-3 py-3 rounded-lg text-base transition-colors",
+                        activeCategory === "all"
+                          ? "bg-primary/10 text-foreground font-medium"
+                          : "text-foreground/80 hover:bg-accent"
+                      )}
+                    >
+                      <ListTodo className="h-5 w-5 shrink-0 text-muted-foreground" />
+                      <span className="flex-1 text-left">Alle</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">{totalCount}</span>
+                    </button>
+                  </SheetClose>
+                </li>
+                {CATEGORIES.map((c) => {
+                  const active = activeCategory === c.key;
+                  const count = tasks.filter((t) => t.category === c.key).length;
+                  return (
+                    <li key={c.key}>
+                      <SheetClose asChild>
+                        <button
+                          onClick={() => setActiveCategory(c.key)}
+                          className={cn(
+                            "w-full min-h-12 flex items-center gap-3 px-3 py-3 rounded-lg text-base transition-colors",
+                            active
+                              ? "bg-primary/10 text-foreground font-medium"
+                              : "text-foreground/80 hover:bg-accent"
+                          )}
+                        >
+                          <span className={cn("h-3 w-3 shrink-0 rounded-full", c.color)} />
+                          <span className="flex-1 text-left">{c.label}</span>
                           <span className="text-xs text-muted-foreground tabular-nums">{count}</span>
                         </button>
                       </SheetClose>
@@ -559,6 +625,43 @@ const Index = () => {
           </div>
         )}
 
+        {/* Category tabs */}
+        <div className="mb-4 -mx-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex items-center gap-1 px-1 border-b border-border">
+            <button
+              onClick={() => setActiveCategory("all")}
+              className={cn(
+                "shrink-0 px-3 sm:px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors",
+                activeCategory === "all"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Alle
+              <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">{totalCount}</span>
+            </button>
+            {CATEGORIES.map((c) => {
+              const count = tasks.filter((t) => t.category === c.key).length;
+              return (
+                <button
+                  key={c.key}
+                  onClick={() => setActiveCategory(c.key)}
+                  className={cn(
+                    "shrink-0 flex items-center px-3 sm:px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors",
+                    activeCategory === c.key
+                      ? "border-primary text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <span className={cn("mr-1.5 h-2 w-2 rounded-full", c.color)} />
+                  {c.label}
+                  <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Filter chips (always visible) */}
         {totalCount > 0 && (
           <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -593,6 +696,25 @@ const Index = () => {
             <Button onClick={handleAddTask} size="icon" className="h-11 w-11 sm:h-10 sm:w-10 shrink-0 bg-primary hover:bg-primary/90">
               <Plus className="h-5 w-5 sm:h-4 sm:w-4" />
             </Button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <span className="text-sm text-muted-foreground mr-1">Kategori:</span>
+            {CATEGORIES.map((c) => (
+              <button
+                key={c.key}
+                onClick={() => setNewCategory(c.key)}
+                className={cn(
+                  "min-h-9 flex items-center px-4 py-1.5 rounded-full text-xs font-medium transition-all",
+                  newCategory === c.key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-accent"
+                )}
+              >
+                <span className={cn("mr-1.5 h-2 w-2 rounded-full", c.color)} />
+                {c.label}
+              </button>
+            ))}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -673,7 +795,7 @@ const Index = () => {
           {visibleTasks.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground animate-fade-in">
               <p className="text-lg">
-                {totalCount === 0 ? "No tasks yet. Add one to get started." : "No tasks match this filter."}
+                {totalCount === 0 ? "No tasks yet. Add one to get started." : "No tasks in this category or filter."}
               </p>
               {totalCount === 0 && <p className="text-sm mt-2">Find your focus, one task at a time.</p>}
             </div>
@@ -719,6 +841,24 @@ const Index = () => {
             >
               <Plus className="h-5 w-5" />
             </Button>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto -mx-1 px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <span className="text-xs text-muted-foreground shrink-0">Kategori:</span>
+            {CATEGORIES.map((c) => (
+              <button
+                key={c.key}
+                onClick={() => setNewCategory(c.key)}
+                className={cn(
+                  "min-h-9 shrink-0 flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                  newCategory === c.key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground"
+                )}
+              >
+                <span className={cn("mr-1.5 h-2 w-2 rounded-full", c.color)} />
+                {c.label}
+              </button>
+            ))}
           </div>
           <div className="flex items-center gap-2 overflow-x-auto -mx-1 px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <span className="text-xs text-muted-foreground shrink-0">Priority:</span>
