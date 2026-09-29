@@ -579,6 +579,43 @@ const Index = () => {
           </div>
         )}
 
+        {/* Category tabs */}
+        <div className="mb-4 -mx-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex items-center gap-1 px-1 border-b border-border">
+            <button
+              onClick={() => setActiveCategory("all")}
+              className={cn(
+                "shrink-0 px-3 sm:px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors",
+                activeCategory === "all"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Alle
+              <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">{totalCount}</span>
+            </button>
+            {CATEGORIES.map((c) => {
+              const count = tasks.filter((t) => t.category === c.key).length;
+              return (
+                <button
+                  key={c.key}
+                  onClick={() => setActiveCategory(c.key)}
+                  className={cn(
+                    "shrink-0 flex items-center px-3 sm:px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors",
+                    activeCategory === c.key
+                      ? "border-primary text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <span className={cn("mr-1.5 h-2 w-2 rounded-full", c.color)} />
+                  {c.label}
+                  <span className="ml-1.5 text-xs text-muted-foreground tabular-nums">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Filter chips (always visible) */}
         {totalCount > 0 && (
           <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -613,6 +650,25 @@ const Index = () => {
             <Button onClick={handleAddTask} size="icon" className="h-11 w-11 sm:h-10 sm:w-10 shrink-0 bg-primary hover:bg-primary/90">
               <Plus className="h-5 w-5 sm:h-4 sm:w-4" />
             </Button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <span className="text-sm text-muted-foreground mr-1">Kategori:</span>
+            {CATEGORIES.map((c) => (
+              <button
+                key={c.key}
+                onClick={() => setNewCategory(c.key)}
+                className={cn(
+                  "min-h-9 flex items-center px-4 py-1.5 rounded-full text-xs font-medium transition-all",
+                  newCategory === c.key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-accent"
+                )}
+              >
+                <span className={cn("mr-1.5 h-2 w-2 rounded-full", c.color)} />
+                {c.label}
+              </button>
+            ))}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -739,6 +795,24 @@ const Index = () => {
             >
               <Plus className="h-5 w-5" />
             </Button>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto -mx-1 px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <span className="text-xs text-muted-foreground shrink-0">Kategori:</span>
+            {CATEGORIES.map((c) => (
+              <button
+                key={c.key}
+                onClick={() => setNewCategory(c.key)}
+                className={cn(
+                  "min-h-9 shrink-0 flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                  newCategory === c.key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground"
+                )}
+              >
+                <span className={cn("mr-1.5 h-2 w-2 rounded-full", c.color)} />
+                {c.label}
+              </button>
+            ))}
           </div>
           <div className="flex items-center gap-2 overflow-x-auto -mx-1 px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <span className="text-xs text-muted-foreground shrink-0">Priority:</span>
