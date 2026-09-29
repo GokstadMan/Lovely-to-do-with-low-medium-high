@@ -259,6 +259,8 @@ const Index = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState("");
   const [newPriority, setNewPriority] = useState<Priority>("medium");
+  const [newCategory, setNewCategory] = useState<Category>("privat");
+  const [activeCategory, setActiveCategory] = useState<"all" | Category>("all");
   const [quote, setQuote] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
@@ -302,7 +304,8 @@ const Index = () => {
   useEffect(() => {
     const savedTasks = localStorage.getItem("zen-tasks");
     if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
+      const parsed = JSON.parse(savedTasks) as Task[];
+      setTasks(parsed.map((t) => ({ ...t, category: t.category ?? "privat" })));
     }
   }, []);
 
@@ -338,6 +341,7 @@ const Index = () => {
         text: newTask.trim(),
         completed: false,
         priority: newPriority,
+        category: newCategory,
       };
       setTasks([...tasks, task]);
       setNewTask("");
@@ -376,7 +380,8 @@ const Index = () => {
 
   const priorityOrder = { high: 0, medium: 1, low: 2 };
   const sortedTasks = [...tasks].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
-  const visibleTasks = filter === "all" ? sortedTasks : sortedTasks.filter((t) => t.priority === filter);
+  const categoryTasks = activeCategory === "all" ? sortedTasks : sortedTasks.filter((t) => t.category === activeCategory);
+  const visibleTasks = filter === "all" ? categoryTasks : categoryTasks.filter((t) => t.priority === filter);
 
   const completedCount = tasks.filter((t) => t.completed).length;
   const totalCount = tasks.length;
