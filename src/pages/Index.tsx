@@ -452,6 +452,52 @@ const Index = () => {
               </ul>
 
               <p className="mt-6 px-3 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Kategorier
+              </p>
+              <ul className="flex flex-col gap-1">
+                <li>
+                  <SheetClose asChild>
+                    <button
+                      onClick={() => setActiveCategory("all")}
+                      className={cn(
+                        "w-full min-h-12 flex items-center gap-3 px-3 py-3 rounded-lg text-base transition-colors",
+                        activeCategory === "all"
+                          ? "bg-primary/10 text-foreground font-medium"
+                          : "text-foreground/80 hover:bg-accent"
+                      )}
+                    >
+                      <ListTodo className="h-5 w-5 shrink-0 text-muted-foreground" />
+                      <span className="flex-1 text-left">Alle</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">{totalCount}</span>
+                    </button>
+                  </SheetClose>
+                </li>
+                {CATEGORIES.map((c) => {
+                  const active = activeCategory === c.key;
+                  const count = tasks.filter((t) => t.category === c.key).length;
+                  return (
+                    <li key={c.key}>
+                      <SheetClose asChild>
+                        <button
+                          onClick={() => setActiveCategory(c.key)}
+                          className={cn(
+                            "w-full min-h-12 flex items-center gap-3 px-3 py-3 rounded-lg text-base transition-colors",
+                            active
+                              ? "bg-primary/10 text-foreground font-medium"
+                              : "text-foreground/80 hover:bg-accent"
+                          )}
+                        >
+                          <span className={cn("h-3 w-3 shrink-0 rounded-full", c.color)} />
+                          <span className="flex-1 text-left">{c.label}</span>
+                          <span className="text-xs text-muted-foreground tabular-nums">{count}</span>
+                        </button>
+                      </SheetClose>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <p className="mt-6 px-3 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Actions
               </p>
               <ul className="flex flex-col gap-1">
@@ -749,7 +795,7 @@ const Index = () => {
           {visibleTasks.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground animate-fade-in">
               <p className="text-lg">
-                {totalCount === 0 ? "No tasks yet. Add one to get started." : "No tasks match this filter."}
+                {totalCount === 0 ? "No tasks yet. Add one to get started." : "No tasks in this category or filter."}
               </p>
               {totalCount === 0 && <p className="text-sm mt-2">Find your focus, one task at a time.</p>}
             </div>
