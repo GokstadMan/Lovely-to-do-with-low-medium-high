@@ -13,12 +13,23 @@ import { playZenChime, CHIME_OPTIONS, type ChimeType } from "@/lib/zen-sound";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Priority = "low" | "medium" | "high";
+type Category = "jobb" | "privat" | "helse" | "prosjekter";
+
+const CATEGORIES: { key: Category; label: string; color: string }[] = [
+  { key: "jobb", label: "Jobb", color: "bg-priority-low" },
+  { key: "privat", label: "Privat", color: "bg-primary" },
+  { key: "helse", label: "Helse", color: "bg-priority-medium" },
+  { key: "prosjekter", label: "Prosjekter", color: "bg-priority-high" },
+];
+
+const categoryMeta = (key: Category) => CATEGORIES.find((c) => c.key === key) ?? CATEGORIES[1];
 
 interface Task {
   id: string;
   text: string;
   completed: boolean;
   priority: Priority;
+  category: Category;
 }
 
 const motivationalQuotes = [
@@ -212,6 +223,10 @@ function SortableTask({
             {task.text}
           </div>
         )}
+
+        <span className="hidden xs:inline sm:inline-flex shrink-0 items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground">
+          {categoryMeta(task.category).label}
+        </span>
 
         <div className={cn("h-2.5 w-2.5 shrink-0 rounded-full", priorityColors[task.priority])} aria-label={`Priority: ${task.priority}`} />
 
