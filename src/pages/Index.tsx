@@ -393,6 +393,7 @@ const Index = () => {
   }, [darkMode]);
   const [quote, setQuote] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [focusId, setFocusId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [soundDuration, setSoundDuration] = useState<number>(() => {
     if (typeof window === "undefined") return 2;
@@ -524,6 +525,18 @@ const Index = () => {
   const totalCount = tasks.length;
 
   const handleClearCompleted = () => setTasks(tasks.filter((t) => !t.completed));
+
+  const focusTask = tasks.find((t) => t.id === focusId) ?? null;
+  const nextFocusCandidate = visibleTasks.find((t) => !t.completed) ?? null;
+  const playBell = () => {
+    if (soundEnabled) playZenChime(soundDuration, soundType, soundIntensity);
+  };
+  const handleFocusComplete = () => {
+    if (!focusTask) return;
+    handleToggleTask(focusTask.id);
+    playBell();
+    setFocusId(null);
+  };
 
   const navFilters: { key: Filter; label: string; icon: typeof ListTodo }[] = [
     { key: "all", label: "All Tasks", icon: ListTodo },
