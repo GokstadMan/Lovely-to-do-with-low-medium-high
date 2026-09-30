@@ -3,7 +3,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, GripVertical, Pencil, Plus, Trash2, Menu, ListTodo, Flag, CheckCircle2, Sparkles, Trash, Volume2, VolumeX, Play, Moon, Sun } from "lucide-react";
+import { Check, GripVertical, Pencil, Plus, Trash2, Menu, ListTodo, Flag, CheckCircle2, Sparkles, Trash, Volume2, VolumeX, Play, Moon, Sun, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { playZenChime, CHIME_OPTIONS, type ChimeType } from "@/lib/zen-sound";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FocusMode } from "@/components/FocusMode";
 
 type Priority = "low" | "medium" | "high";
 type Category = "jobb" | "privat" | "helse" | "prosjekter";
@@ -156,7 +157,8 @@ function SortableTask({
   onDelete, 
   onEdit,
   isEditing,
-  onStartEdit 
+  onStartEdit,
+  onFocus
 }: { 
   task: Task; 
   onToggle: (id: string) => void; 
@@ -164,6 +166,7 @@ function SortableTask({
   onEdit: (id: string, text: string) => void;
   isEditing: boolean;
   onStartEdit: (id: string, text: string) => void;
+  onFocus?: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
   const [editValue, setEditValue] = useState(task.text);
@@ -339,6 +342,15 @@ function SortableTask({
 
         {!isEditing && (
           <>
+            {onFocus && !task.completed && (
+              <button
+                onClick={() => onFocus(task.id)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-primary hover:bg-accent transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100"
+                aria-label="Fokuser på denne oppgaven"
+              >
+                <Target className="h-4 w-4" />
+              </button>
+            )}
             <button
               onClick={() => onStartEdit(task.id, task.text)}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100"
