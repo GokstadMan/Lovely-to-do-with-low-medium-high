@@ -3,11 +3,12 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, GripVertical, Pencil, Plus, Trash2, Menu, ListTodo, Flag, CheckCircle2, Sparkles, Trash, Volume2, Play, Moon, Sun } from "lucide-react";
+import { Check, GripVertical, Pencil, Plus, Trash2, Menu, ListTodo, Flag, CheckCircle2, Sparkles, Trash, Volume2, VolumeX, Play, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { playZenChime, CHIME_OPTIONS, type ChimeType } from "@/lib/zen-sound";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -42,6 +43,112 @@ const motivationalQuotes = [
   "Do less, but do it better.",
   "Peace comes from within. Focus on what matters.",
 ];
+
+function SoundSettings({
+  enabled,
+  setEnabled,
+  soundType,
+  setSoundType,
+  soundDuration,
+  setSoundDuration,
+  soundIntensity,
+  setSoundIntensity,
+  className,
+}: {
+  enabled: boolean;
+  setEnabled: (v: boolean) => void;
+  soundType: ChimeType;
+  setSoundType: (v: ChimeType) => void;
+  soundDuration: number;
+  setSoundDuration: (v: number) => void;
+  soundIntensity: number;
+  setSoundIntensity: (v: number) => void;
+  className?: string;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn("text-muted-foreground/60 hover:text-muted-foreground", className)}
+          aria-label="Lydinnstillinger"
+        >
+          {enabled ? <Volume2 className="h-[18px] w-[18px]" /> : <VolumeX className="h-[18px] w-[18px]" />}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-foreground/80">Lyd</span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => playZenChime(soundDuration, soundType, soundIntensity)}
+              disabled={!enabled}
+              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-40"
+              aria-label="Forhåndsvis lyd"
+            >
+              <Play className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => setEnabled(!enabled)}
+              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              aria-label={enabled ? "Slå av lyd" : "Slå på lyd"}
+            >
+              {enabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        {enabled && (
+          <div className="space-y-4">
+            <Select value={soundType} onValueChange={(v) => setSoundType(v as ChimeType)}>
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CHIME_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    <span className="text-sm">{o.label}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs text-muted-foreground">Varighet</span>
+                <span className="text-xs text-muted-foreground tabular-nums">{soundDuration}s</span>
+              </div>
+              <Slider
+                value={[soundDuration]}
+                min={1}
+                max={5}
+                step={0.5}
+                onValueChange={([v]) => setSoundDuration(v)}
+                aria-label="Varighet på lyden"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs text-muted-foreground">Styrke</span>
+                <span className="text-xs text-muted-foreground tabular-nums">{Math.round(soundIntensity * 100)}%</span>
+              </div>
+              <Slider
+                value={[soundIntensity]}
+                min={0}
+                max={1}
+                step={0.05}
+                onValueChange={([v]) => setSoundIntensity(v)}
+                aria-label="Styrke på lyden"
+              />
+            </div>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 function SortableTask({ 
   task, 
@@ -293,6 +400,10 @@ const Index = () => {
     const n = saved ? parseFloat(saved) : NaN;
     return Number.isFinite(n) && n >= 0 && n <= 1 ? n : 1;
   });
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("zen-sound-enabled") !== "false";
+  });
 
   useEffect(() => {
     localStorage.setItem("zen-sound-duration", String(soundDuration));
@@ -303,6 +414,9 @@ const Index = () => {
   useEffect(() => {
     localStorage.setItem("zen-sound-intensity", String(soundIntensity));
   }, [soundIntensity]);
+  useEffect(() => {
+    localStorage.setItem("zen-sound-enabled", String(soundEnabled));
+  }, [soundEnabled]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -356,7 +470,7 @@ const Index = () => {
       };
       setTasks([...tasks, task]);
       setNewTask("");
-      playZenChime(soundDuration, soundType, soundIntensity);
+      if (soundEnabled) playZenChime(soundDuration, soundType, soundIntensity);
     }
   };
 
@@ -542,69 +656,21 @@ const Index = () => {
                 </li>
               </ul>
 
-              <p className="mt-6 px-3 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Zen sound
-              </p>
-              <div className="px-3 py-3 space-y-4">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <Volume2 className="h-5 w-5 shrink-0 text-muted-foreground" />
-                    <span className="flex-1 text-base text-foreground/80">Sound</span>
-                    <button
-                      onClick={() => playZenChime(soundDuration, soundType, soundIntensity)}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                      aria-label="Preview zen sound"
-                    >
-                      <Play className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <Select value={soundType} onValueChange={(v) => setSoundType(v as ChimeType)}>
-                    <SelectTrigger className="h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CHIME_OPTIONS.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{o.label}</span>
-                            <span className="text-xs text-muted-foreground">{o.description}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm text-foreground/80">Duration</span>
-                    <span className="text-sm text-muted-foreground tabular-nums">{soundDuration}s</span>
-                  </div>
-                  <Slider
-                    value={[soundDuration]}
-                    min={1}
-                    max={5}
-                    step={0.5}
-                    onValueChange={([v]) => setSoundDuration(v)}
-                    aria-label="Zen sound duration in seconds"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm text-foreground/80">Intensity</span>
-                    <span className="text-sm text-muted-foreground tabular-nums">{Math.round(soundIntensity * 100)}%</span>
-                  </div>
-                  <Slider
-                    value={[soundIntensity]}
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    onValueChange={([v]) => setSoundIntensity(v)}
-                    aria-label="Zen sound intensity"
-                  />
-                </div>
+              <div className="mt-6 px-3 py-2 flex items-center gap-3">
+                <span className="flex-1 text-sm text-muted-foreground">Lyd ved ny oppgave</span>
+                <SoundSettings
+                  enabled={soundEnabled}
+                  setEnabled={setSoundEnabled}
+                  soundType={soundType}
+                  setSoundType={setSoundType}
+                  soundDuration={soundDuration}
+                  setSoundDuration={setSoundDuration}
+                  soundIntensity={soundIntensity}
+                  setSoundIntensity={setSoundIntensity}
+                  className="h-10 w-10"
+                />
               </div>
+
             </nav>
 
             <div className="border-t border-border px-6 py-4">
@@ -618,11 +684,22 @@ const Index = () => {
 
         <span className="text-base font-light tracking-tight text-foreground">Zen Tasks</span>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
             <CheckCircle2 className="h-4 w-4" />
             {completedCount}/{totalCount}
           </div>
+          <SoundSettings
+            enabled={soundEnabled}
+            setEnabled={setSoundEnabled}
+            soundType={soundType}
+            setSoundType={setSoundType}
+            soundDuration={soundDuration}
+            setSoundDuration={setSoundDuration}
+            soundIntensity={soundIntensity}
+            setSoundIntensity={setSoundIntensity}
+            className="h-11 w-11"
+          />
           <Button
             variant="ghost"
             size="icon"
@@ -635,18 +712,33 @@ const Index = () => {
         </div>
       </div>
 
+
       <div className="mx-auto max-w-2xl">
         {/* Header with Quote */}
         <header className="relative mb-6 sm:mb-8 text-center animate-fade-in">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setDarkMode(!darkMode)}
-            className="hidden sm:flex absolute right-0 top-0 h-10 w-10"
-            aria-label={darkMode ? "Bytt til lyst tema" : "Bytt til mørkt tema"}
-          >
-            {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
+          <div className="hidden sm:flex absolute right-0 top-0 items-center gap-0.5">
+            <SoundSettings
+              enabled={soundEnabled}
+              setEnabled={setSoundEnabled}
+              soundType={soundType}
+              setSoundType={setSoundType}
+              soundDuration={soundDuration}
+              setSoundDuration={setSoundDuration}
+              soundIntensity={soundIntensity}
+              setSoundIntensity={setSoundIntensity}
+              className="h-10 w-10"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDarkMode(!darkMode)}
+              className="h-10 w-10"
+              aria-label={darkMode ? "Bytt til lyst tema" : "Bytt til mørkt tema"}
+            >
+              {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+          </div>
+
           <h1 className="hidden sm:block mb-2 sm:mb-3 text-3xl sm:text-4xl font-light tracking-tight text-foreground">Zen Tasks</h1>
           <p className="text-sm italic text-muted-foreground max-w-md mx-auto leading-relaxed px-2">{quote}</p>
         </header>
@@ -779,59 +871,6 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Zen sound settings */}
-          <div className="mt-4 pt-4 border-t border-border space-y-3">
-            <div className="flex items-center gap-3">
-              <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground shrink-0">Sound</span>
-              <Select value={soundType} onValueChange={(v) => setSoundType(v as ChimeType)}>
-                <SelectTrigger className="flex-1 h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CHIME_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      <span className="font-medium">{o.label}</span>
-                      <span className="text-xs text-muted-foreground ml-2">{o.description}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <button
-                onClick={() => playZenChime(soundDuration, soundType, soundIntensity)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                aria-label="Preview zen sound"
-              >
-                <Play className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground shrink-0 w-16">Duration</span>
-              <Slider
-                value={[soundDuration]}
-                min={1}
-                max={5}
-                step={0.5}
-                onValueChange={([v]) => setSoundDuration(v)}
-                className="flex-1"
-                aria-label="Zen sound duration in seconds"
-              />
-              <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">{soundDuration}s</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground shrink-0 w-16">Intensity</span>
-              <Slider
-                value={[soundIntensity]}
-                min={0}
-                max={1}
-                step={0.05}
-                onValueChange={([v]) => setSoundIntensity(v)}
-                className="flex-1"
-                aria-label="Zen sound intensity"
-              />
-              <span className="text-xs text-muted-foreground tabular-nums w-10 text-right">{Math.round(soundIntensity * 100)}%</span>
-            </div>
-          </div>
         </div>
 
         {/* Tasks List */}
