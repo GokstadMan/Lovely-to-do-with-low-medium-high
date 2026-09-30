@@ -3,7 +3,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, GripVertical, Pencil, Plus, Trash2, Menu, ListTodo, Flag, CheckCircle2, Sparkles, Trash, Volume2, VolumeX, Play, Moon, Sun } from "lucide-react";
+import { Check, GripVertical, Pencil, Plus, Trash2, Menu, ListTodo, Flag, CheckCircle2, Sparkles, Trash, Volume2, VolumeX, Play, Moon, Sun, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { playZenChime, CHIME_OPTIONS, type ChimeType } from "@/lib/zen-sound";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FocusMode } from "@/components/FocusMode";
 
 type Priority = "low" | "medium" | "high";
 type Category = "jobb" | "privat" | "helse" | "prosjekter";
@@ -156,7 +157,8 @@ function SortableTask({
   onDelete, 
   onEdit,
   isEditing,
-  onStartEdit 
+  onStartEdit,
+  onFocus
 }: { 
   task: Task; 
   onToggle: (id: string) => void; 
@@ -164,6 +166,7 @@ function SortableTask({
   onEdit: (id: string, text: string) => void;
   isEditing: boolean;
   onStartEdit: (id: string, text: string) => void;
+  onFocus?: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
   const [editValue, setEditValue] = useState(task.text);
@@ -339,6 +342,15 @@ function SortableTask({
 
         {!isEditing && (
           <>
+            {onFocus && !task.completed && (
+              <button
+                onClick={() => onFocus(task.id)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-primary hover:bg-accent transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100"
+                aria-label="Fokuser på denne oppgaven"
+              >
+                <Target className="h-4 w-4" />
+              </button>
+            )}
             <button
               onClick={() => onStartEdit(task.id, task.text)}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100"
@@ -381,6 +393,7 @@ const Index = () => {
   }, [darkMode]);
   const [quote, setQuote] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [focusId, setFocusId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [soundDuration, setSoundDuration] = useState<number>(() => {
     if (typeof window === "undefined") return 2;
@@ -513,6 +526,18 @@ const Index = () => {
 
   const handleClearCompleted = () => setTasks(tasks.filter((t) => !t.completed));
 
+  const focusTask = tasks.find((t) => t.id === focusId) ?? null;
+  const nextFocusCandidate = visibleTasks.find((t) => !t.completed) ?? null;
+  const playBell = () => {
+    if (soundEnabled) playZenChime(soundDuration, soundType, soundIntensity);
+  };
+  const handleFocusComplete = () => {
+    if (!focusTask) return;
+    handleToggleTask(focusTask.id);
+    playBell();
+    setFocusId(null);
+  };
+
   const navFilters: { key: Filter; label: string; icon: typeof ListTodo }[] = [
     { key: "all", label: "All Tasks", icon: ListTodo },
     { key: "high", label: "High Priority", icon: Flag },
@@ -522,6 +547,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-zen px-4 py-6 sm:p-8 pb-[calc(env(safe-area-inset-bottom)+11rem)] sm:pb-8">
+      {focusTask && (
+        <FocusMode
+          text={focusTask.text}
+          categoryLabel={categoryMeta(focusTask.category).label}
+          onComplete={handleFocusComplete}
+          onClose={() => setFocusId(null)}
+          onBell={playBell}
+        />
+      )}
       {/* Mobile top nav bar */}
       <div className="sm:hidden sticky top-0 -mx-4 -mt-6 mb-4 z-30 flex items-center justify-between px-4 py-3 bg-background/70 backdrop-blur-md border-b border-border">
         <Sheet>
@@ -627,6 +661,18 @@ const Index = () => {
               </p>
               <ul className="flex flex-col gap-1">
                 <li>
+                  <SheetClose asChild>
+                    <button
+                      onClick={() => nextFocusCandidate && setFocusId(nextFocusCandidate.id)}
+                      disabled={!nextFocusCandidate}
+                      className="w-full min-h-12 flex items-center gap-3 px-3 py-3 rounded-lg text-base text-foreground/80 hover:bg-accent disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                    >
+                      <Target className="h-5 w-5 shrink-0 text-muted-foreground" />
+                      <span className="flex-1 text-left">Start fokus</span>
+                    </button>
+                  </SheetClose>
+                </li>
+                <li>
                   <button
                     onClick={() => setDarkMode(!darkMode)}
                     className="w-full min-h-12 flex items-center gap-3 px-3 py-3 rounded-lg text-base text-foreground/80 hover:bg-accent transition-colors"
@@ -689,6 +735,16 @@ const Index = () => {
             <CheckCircle2 className="h-4 w-4" />
             {completedCount}/{totalCount}
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => nextFocusCandidate && setFocusId(nextFocusCandidate.id)}
+            disabled={!nextFocusCandidate}
+            className="h-11 w-11 text-muted-foreground/60 hover:text-muted-foreground"
+            aria-label="Start fokus-modus"
+          >
+            <Target className="h-[18px] w-[18px]" />
+          </Button>
           <SoundSettings
             enabled={soundEnabled}
             setEnabled={setSoundEnabled}
@@ -717,6 +773,16 @@ const Index = () => {
         {/* Header with Quote */}
         <header className="relative mb-6 sm:mb-8 text-center animate-fade-in">
           <div className="hidden sm:flex absolute right-0 top-0 items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => nextFocusCandidate && setFocusId(nextFocusCandidate.id)}
+              disabled={!nextFocusCandidate}
+              className="h-10 w-10 text-muted-foreground/60 hover:text-muted-foreground"
+              aria-label="Start fokus-modus"
+            >
+              <Target className="h-[18px] w-[18px]" />
+            </Button>
             <SoundSettings
               enabled={soundEnabled}
               setEnabled={setSoundEnabled}
@@ -894,6 +960,7 @@ const Index = () => {
                     onEdit={handleEditTask}
                     isEditing={editingId === task.id}
                     onStartEdit={handleStartEdit}
+                    onFocus={setFocusId}
                   />
                 ))}
               </SortableContext>
